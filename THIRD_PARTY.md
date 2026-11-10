@@ -1,5 +1,7 @@
 # Third-party sources
 
+根目录 `LICENSE` 的 MIT 许可适用于本项目原创代码、图标和文档。`third_party/` 内的库、SDK 接口文件以及改编代码中保留的上游版权声明仍受各自原有许可约束，不因新增根许可证而改变。
+
 ## RtAudio
 
 采用：https://github.com/thestk/rtaudio （RtAudio 的 MIT-style license，最近提交 2026-10）。
@@ -33,3 +35,15 @@
 ## Icon tooling
 
 图标是本项目原创 SVG。仅重新生成图标时使用 `resvg_py==0.5.0`（MIT，https://github.com/baseplate-admin/resvg-py）；安装于忽略的 `build/icon-tools/`，不随程序分发。普通构建使用已提交的 ICO。PNG 帧封装为多尺寸 ICO 使用 Python 标准库，无额外运行依赖。
+
+## KISS FFT (ToneScope)
+
+采用：https://github.com/mborgerding/kissfft （BSD-3-Clause，固定 131.2.0，commit `7bce4153c6bc8aba2db0e889e576f9d00505cbe1`）。
+理由：成熟、轻量、支持 double，无 GPL 运行依赖，适合 FFT 和频谱的可复现实验。
+接入：所需 C 源码、头文件和许可证放入 `third_party/kissfft/`，编译定义 `kiss_fft_scalar=double`，未修改算法源文件。
+
+## dr_wav (ToneScope)
+
+采用：https://github.com/mackron/dr_libs （MIT-0 或 Unlicense 双许可，commit `4ffbded724cc3e3d2838eebca70858bf5984385a`，2026-11-10）。
+理由：已有成熟 WAV/RF64/PCM/float 解码，无需自行实现文件格式解析。
+接入：`third_party/dr_libs/dr_wav.h` 与 `LICENSE`，分析器通过 PCM32 或原生 float64 解码保留有效精度。

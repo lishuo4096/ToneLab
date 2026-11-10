@@ -4,8 +4,13 @@
 101 ICON "tonelab.ico"
 
 1 VERSIONINFO
+#ifdef TONE_SCOPE_RESOURCE
+ FILEVERSION 0,1,0,0
+ PRODUCTVERSION 0,1,0,0
+#else
  FILEVERSION 1,0,0,0
  PRODUCTVERSION 1,0,0,0
+#endif
  FILEFLAGSMASK 0x3fL
  FILEFLAGS 0
  FILEOS VOS_NT_WINDOWS32
@@ -16,10 +21,26 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
+#ifdef TONE_SCOPE_RESOURCE
+            VALUE "FileDescription", "ToneScope - Stereo Audio Analyzer\0"
+#else
             VALUE "FileDescription", "ToneLab - Precision Stereo Signal Generator\0"
+#endif
+#ifdef TONE_SCOPE_RESOURCE
+            VALUE "FileVersion", "0.1.0\0"
+#else
             VALUE "FileVersion", "1.0.0\0"
+#endif
+#ifdef TONE_SCOPE_RESOURCE
+            VALUE "ProductName", "ToneScope\0"
+#else
             VALUE "ProductName", "ToneLab\0"
+#endif
+#ifdef TONE_SCOPE_RESOURCE
+            VALUE "ProductVersion", "0.1.0\0"
+#else
             VALUE "ProductVersion", "1.0.0\0"
+#endif
         END
     END
     BLOCK "VarFileInfo"

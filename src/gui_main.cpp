@@ -1,5 +1,9 @@
 // Adapted from Dear ImGui Win32/DX11 example (MIT). See THIRD_PARTY.md.
+#ifdef TONE_ANALYZER
+#include "analyzer/ui.hpp"
+#else
 #include "tone/ui.hpp"
+#endif
 // Dear ImGui: standalone example application for DirectX 11
 
 // Learn about Dear ImGui:
@@ -18,6 +22,9 @@
 #include <chrono>
 #include <vector>
 #include <fstream>
+#ifdef TONE_ANALYZER
+#include <shellapi.h>
+#endif
 
 // Data
 static ID3D11Device*            g_pd3dDevice = nullptr;
@@ -38,16 +45,29 @@ bool SaveSnapshot(const std::string& path);
 // Main code
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR commandLine, int)
 {
-    std::string argument=commandLine;bool snapshot=argument.rfind("--snapshot=",0)==0||argument.rfind("--snapshot-asio=",0)==0;
+    std::string argument=commandLine;bool snapshot=argument.rfind("--snapshot=",0)==0||argument.rfind("--snapshot-asio=",0)==0||argument.rfind("--snapshot-live=",0)==0;
     std::string snapshotPath=snapshot?argument.substr(argument.find('=')+1):"";
     if(argument.rfind("--snapshot-asio=",0)==0)snapshotBackend(2);
+#ifdef TONE_ANALYZER
+    if(argument.rfind("--snapshot-live=",0)==0)snapshotBackend(1);
+#endif
     // Create application window
     ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEXW wc = { sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"ImGui Example", nullptr };
     wc.hIcon = static_cast<HICON>(LoadImageW(wc.hInstance, MAKEINTRESOURCEW(101), IMAGE_ICON, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), LR_SHARED));
     wc.hIconSm = static_cast<HICON>(LoadImageW(wc.hInstance, MAKEINTRESOURCEW(101), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_SHARED));
     ::RegisterClassExW(&wc);
-    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"ToneLab - Precision Signal Studio", WS_OVERLAPPEDWINDOW, 100, 100, 1160, 1020, nullptr, nullptr, wc.hInstance, nullptr);
+#ifdef TONE_ANALYZER
+    const wchar_t* title=L"ToneScope - Audio Analysis Studio";
+    const int initialWidth=1280,initialHeight=1040;
+#else
+    const wchar_t* title=L"ToneLab - Precision Signal Studio";
+    const int initialWidth=1160,initialHeight=1020;
+#endif
+    HWND hwnd = ::CreateWindowW(wc.lpszClassName, title, WS_OVERLAPPEDWINDOW, 100, 100, initialWidth, initialHeight, nullptr, nullptr, wc.hInstance, nullptr);
+#ifdef TONE_ANALYZER
+    DragAcceptFiles(hwnd,TRUE);
+#endif
 
     // Initialize Direct3D
     if (!CreateDeviceD3D(hwnd))
@@ -273,6 +293,14 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
     switch (msg)
     {
+#ifdef TONE_ANALYZER
+    case WM_DROPFILES:
+    {
+        auto drop=reinterpret_cast<HDROP>(wParam);wchar_t path[32768];
+        if(DragQueryFileW(drop,0,path,32768))analyzerOpenPath(path);
+        DragFinish(drop);return 0;
+    }
+#endif
     case WM_GETMINMAXINFO:
         reinterpret_cast<MINMAXINFO*>(lParam)->ptMinTrackSize = {1060, 870};
         return 0;

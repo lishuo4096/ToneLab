@@ -7,7 +7,7 @@ try {
     foreach ($exe in @('ToneLab.exe','tonelab-cli.exe','dsp-tests.exe','loopback-test.exe')) {
         Copy-Item -LiteralPath ('dist/' + $exe) -Destination $stage
     }
-    Copy-Item -LiteralPath README.md,THIRD_PARTY.md -Destination $stage
+    Copy-Item -LiteralPath README.md,THIRD_PARTY.md,LICENSE -Destination $stage
     Copy-Item -LiteralPath assets/tonelab.svg,assets/tonelab.png,assets/tonelab.ico -Destination ($stage + '/assets')
     Copy-Item -LiteralPath assets/ui-wasapi.png,assets/ui-asio.png -Destination ($stage + '/assets')
     Get-ChildItem -LiteralPath docs -File | Where-Object { $_.Extension -in @('.md','.json') } | Copy-Item -Destination ($stage + '/docs')

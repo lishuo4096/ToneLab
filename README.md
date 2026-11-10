@@ -2,7 +2,18 @@
 
 <img src="assets/tonelab.png" width="96" alt="ToneLab stereo wave icon">
 
-[下载 Windows x64 程序](https://github.com/lishuo4096/ToneLab/releases/latest) · [界面预览](assets/ui-wasapi.png)
+[下载 ToneLab 信号发生器](https://github.com/lishuo4096/ToneLab/releases/tag/v1.0.0) · [下载 ToneScope 分析器（含 CLI）](https://github.com/lishuo4096/ToneLab/releases/tag/tonescope-v0.1.0) · [界面预览](assets/ui-wasapi.png)
+
+新增独立 **ToneScope 音频分析器**：实时双声道 PSD、录音、WAV 时间段分析、THD/THD+N/SNR/SINAD，信号源直接调用现有 ToneLab CLI。使用说明与 MATLAB 验证数据见 [docs/ANALYZER.md](docs/ANALYZER.md)。本地程序为 `dist/ToneScope.exe`，分析 CLI 为 `dist/tonescope-cli.exe`。
+
+纯命令行用户可下载 Release 中的 `ToneScope-CLI-0.1.0-windows-x64.zip`，无需启动 GUI：
+
+```powershell
+.\tonescope-cli.exe analyze --input capture.wav --fft 262144 --json report.json --csv psd.csv
+.\tonescope-cli.exe measure --input-device 2 --output-device 0 --rate 384000 --seconds 2 --tone 997 --amp 0.05 --drive left --output capture.wav --json report.json
+```
+
+本项目原创代码与文档采用 [MIT License](LICENSE)；第三方源码保留原有许可，详见 [THIRD_PARTY.md](THIRD_PARTY.md)。
 
 Windows x64 双声道音调发生器，C++17 / Dear ImGui + DirectX 11，提供桌面界面和独立 CLI。使用本机 MinGW-w64 编译，无需安装音频软件框架。
 
