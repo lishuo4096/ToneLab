@@ -1,0 +1,111 @@
+diff --git a/RtAudio.cpp b/RtAudio.cpp
+index 049be27..00dbf1b 100644
+--- a/RtAudio.cpp
++++ b/RtAudio.cpp
+@@ -42,6 +42,9 @@
+ // RtAudio: Version 6.0.1
+ 
+ #include "RtAudio.h"
++#include "tone/asio_events.hpp"
++std::atomic<int> tonelabAsioEvent{0};
++std::atomic<unsigned> tonelabAsioExpectedRate{0};
+ #include <iostream>
+ #include <cstdlib>
+ #include <cstring>
+@@ -58,10 +61,11 @@
+ using namespace rt::audio;
+ 
+ // Static variable definitions.
+-const unsigned int RtApi::MAX_SAMPLE_RATES = 14;
++const unsigned int RtApi::MAX_SAMPLE_RATES = 20;
+ const unsigned int RtApi::SAMPLE_RATES[] = {
+   4000, 5512, 8000, 9600, 11025, 16000, 22050,
+-  32000, 44100, 48000, 88200, 96000, 176400, 192000
++  32000, 44100, 48000, 88200, 96000, 176400, 192000,
++  256000, 352800, 384000, 512000, 705600, 768000
+ };
+ 
+ template<typename T> inline
+@@ -3520,8 +3524,8 @@ bool RtApiAsio :: probeDeviceInfo( RtAudio::DeviceInfo &info )
+   // Determine supported data types ... just check first channel and assume rest are the same.
+   ASIOChannelInfo channelInfo;
+   channelInfo.channel = 0;
+-  channelInfo.isInput = true;
+-  if ( info.inputChannels <= 0 ) channelInfo.isInput = false;
++  // ToneLab: probe playback sample type, not an unrelated capture channel.
++  channelInfo.isInput = info.outputChannels <= 0;
+   result = ASIOGetChannelInfo( &channelInfo );
+   if ( result != ASE_OK ) {
+     ASIOExit();
+@@ -3706,6 +3710,26 @@ bool RtApiAsio :: probeDeviceOpen( unsigned int deviceId, StreamMode mode, unsig
+     goto error;
+   }
+ 
++  // Set the buffer size.  For a duplex stream, this will end up
++  // ToneLab local patch: never silently reduce precision in the ASIO driver.
++  if ( stream_.deviceFormat[mode] != format ) {
++    errorText_ = "ToneLab: ASIO native sample format differs from requested format. Select the driver's native format.";
++    goto error;
++  }
++  for ( unsigned int ch = firstChannel; ch < firstChannel + channels; ++ch ) {
++    ASIOChannelInfo info;
++    info.channel = ch;
++    info.isInput = mode == INPUT;
++    if ( ASIOGetChannelInfo( &info ) != ASE_OK || info.type != channelInfo.type ) {
++      errorText_ = "ToneLab: ASIO output channels must use identical native sample types.";
++      goto error;
++    }
++  }
++  if ( ASIOGetSampleRate( &currentRate ) != ASE_OK || currentRate != sampleRate ) {
++    errorText_ = "ToneLab: ASIO driver did not apply the requested sample rate.";
++    goto error;
++  }
++
+   // Set the buffer size.  For a duplex stream, this will end up
+   // setting the buffer size based on the input constraints, which
+   // should be ok.
+@@ -4269,19 +4293,9 @@ bool RtApiAsio :: callbackEvent( long bufferIndex )
+ 
+ static void sampleRateChanged( ASIOSampleRate sRate )
+ {
+-  // The ASIO documentation says that this usually only happens during
+-  // external sync.  Audio processing is not stopped by the driver,
+-  // actual sample rate might not have even changed, maybe only the
+-  // sample rate status of an AES/EBU or S/PDIF digital input at the
+-  // audio device.
+-
+-  RtApi *object = (RtApi *) asioCallbackInfo->object;
+-  if ( object->getStreamSampleRate() != sRate ) {
+-    asioCallbackInfo->deviceDisconnected = true; // flag for either rate change or disconnect
+-    unsigned threadId;
+-    asioCallbackInfo->thread = _beginthreadex( NULL, 0, &asioStopStream,
+-                                               asioCallbackInfo, 0, &threadId );
+-  }
++  // ToneLab: the ASIO owner STA handles teardown, never a second closing thread.
++  if (tonelabAsioExpectedRate.load() && tonelabAsioExpectedRate.load() != sRate)
++    tonelabAsioEvent.store(2);
+ }
+ 
+ static long asioMessages( long selector, long value, void* /*message*/, double* /*opt*/ )
+@@ -4302,19 +4316,8 @@ static long asioMessages( long selector, long value, void* /*message*/, double*
+       ret = 1L;
+     break;
+   case kAsioResetRequest:
+-    // This message is received when a device is disconnected (and
+-    // perhaps when the sample rate changes). It indicates that the
+-    // driver should be reset, which is accomplished by calling
+-    // ASIOStop(), ASIODisposeBuffers() and removing the driver. But
+-    // since this message comes from the driver, we need to let this
+-    // function return before attempting to close the stream and
+-    // remove the driver. Thus, we invoke a thread to initiate the
+-    // stream closing.
+-    asioCallbackInfo->deviceDisconnected = true; // flag for either rate change or disconnect
+-    unsigned threadId;
+-    asioCallbackInfo->thread = _beginthreadex( NULL, 0, &asioStopStream,
+-                                               asioCallbackInfo, 0, &threadId );
+-    //std::cerr << "\nRtApiAsio: driver reset requested!!!" << std::endl;
++    // ToneLab: defer and coalesce resets; multiple callback threads must not close one stream.
++    tonelabAsioEvent.store(1);
+     ret = 1L;
+     break;
+   case kAsioResyncRequest:

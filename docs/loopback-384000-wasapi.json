@@ -1,0 +1,12 @@
+{
+  "rate": 384000,
+  "capture_discontinuities": 0,
+  "output_underruns": 0,
+  "stages": [
+    [{"channel":0,"rms":0.00113991,"own_tone":0.00160703,"other_tone":7.14992e-07,"pass":true},{"channel":1,"rms":0.0011567,"own_tone":0.00163071,"other_tone":9.64687e-07,"pass":true}],
+    [{"channel":0,"rms":6.82922e-05,"own_tone":1.04376e-07,"other_tone":1.29837e-07,"pass":true},{"channel":1,"rms":0.00115649,"own_tone":0.0016305,"other_tone":8.79575e-07,"pass":true}],
+    [{"channel":0,"rms":6.79432e-05,"own_tone":3.78272e-08,"other_tone":4.69159e-08,"pass":true},{"channel":1,"rms":6.73548e-05,"own_tone":1.24303e-07,"other_tone":4.17918e-08,"pass":true}],
+    [{"channel":0,"rms":0.00113973,"own_tone":0.00160649,"other_tone":9.47926e-07,"pass":true},{"channel":1,"rms":6.74289e-05,"own_tone":8.15665e-08,"other_tone":1.75001e-07,"pass":true}]
+  ],
+  "pass": true
+}
